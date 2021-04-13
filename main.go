@@ -12,15 +12,25 @@ import (
 )
 
 func main() {
-    err := PdfJpegGenerate("hello.pdf")
-    if err != nil {
-        panic(err)
-    }
+     start_dir :="./img"
+     files, err := ioutil.ReadDir(start_dir)
+     if err != nil {
+        log.Fatal(err)
+     }
+     for _, f := range files {
+            fmt.Println(start_dir+"/"+f.Name())
+            err := PdfJpegGenerate(f.Name()+".pdf", path.Join(start_dir,f.Name()))
+            if err != nil {
+                panic(err)
+            }
+     }
+
+
 }
 
 // Find file in folder for creation jpg
-func PdfJpegGenerate(filename string) error {
-    dir_to_scan := "./img"
+func PdfJpegGenerate(filename string, dir_to_scan string) error {
+    
     files, err := ioutil.ReadDir(dir_to_scan)
     if err != nil {
        log.Fatal(err)
@@ -37,6 +47,8 @@ func PdfJpegGenerate(filename string) error {
                    Wd: 4000.0,
             },
     })
+
+    
     //pdf.SetFont("Arial", "B", 16)
     for _, f := range files {
 
@@ -50,7 +62,7 @@ func PdfJpegGenerate(filename string) error {
              pdf.AddPage()
              // ImageOptions(src, x, y, width, height, flow, options, link, linkStr)
              pdf.ImageOptions(
-             path.Join("./img/",f.Name()),
+             path.Join(dir_to_scan,f.Name()),
              0, 0,
              float64(im.Width), float64(im.Height),
              false,
