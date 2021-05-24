@@ -27,6 +27,11 @@ windows:
 	@$(CGO_ENABLED) $(ENV_WIN64) $(CMD_BUILD) $(DIR)/$(APP).exe
 #	@$(CGO_ENABLED) $(ENV_WIN32) $(CMD_BUILD) $(DIR)/$(APP)win32.exe
 	@echo "Windows complete."
+windows32:
+#	@$(CGO_ENABLED) $(ENV_WIN64) $(CMD_BUILD) $(DIR)/$(APP).exe
+	@$(CGO_ENABLED) $(ENV_WIN32) $(CMD_BUILD) $(DIR)/$(APP)win32.exe
+	@echo "Windows complete."
+
 	
 	
 linux:

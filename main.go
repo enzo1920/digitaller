@@ -2,76 +2,72 @@ package main
 
 import (
     "fmt"
-    "image"
     "log"
     "os"
     "path"
     "path/filepath"
     "io/ioutil"
-    "github.com/jung-kurt/gofpdf"
+    "bytes"
+    "github.com/signintech/gopdf"
+    "github.com/nfnt/resize"
+    "image"
+    "image/jpeg"
 )
 
 func main() {
+     version := "0.0.2"
+     fmt.Println("Pdf jpeg creator version:"+version)
+     fmt.Println("start dir is:   img")
+     fmt.Println("Press any key to start!!!")
+     fmt.Scanln()
      start_dir :="./img"
-     files, err := ioutil.ReadDir(start_dir)
+     folders, err := ioutil.ReadDir(start_dir)
      if err != nil {
         log.Fatal(err)
      }
-     for _, f := range files {
+     for _, f := range folders {
             fmt.Println(start_dir+"/"+f.Name())
-            err := PdfJpegGenerate(f.Name()+".pdf", path.Join(start_dir,f.Name()))
-            if err != nil {
-                panic(err)
-            }
+            PdfJpegGenerate(f.Name()+".pdf", path.Join(start_dir,f.Name()))
+
      }
 
 
 }
 
 // Find file in folder for creation jpg
-func PdfJpegGenerate(filename string, dir_to_scan string) error {
-    
+func PdfJpegGenerate(filename string, dir_to_scan string) {
+
     files, err := ioutil.ReadDir(dir_to_scan)
     if err != nil {
        log.Fatal(err)
     }
+        pdf := gopdf.GoPdf{}
+        pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4 })  
+        //buffer for resize jpeg
+        buf := new(bytes.Buffer)
 
-    //im, _, err := image.DecodeConfig()
-    //create pdf document 
-    //pdf := gofpdf.New("P", "pt ", "A4", "")
-    pdf := gofpdf.NewCustom(&gofpdf.InitType{
-            OrientationStr:  "P",
-            UnitStr:        "pt",
-            Size: gofpdf.SizeType{
-                   Ht: 5000.0,
-                   Wd: 4000.0,
-            },
-    })
-
-    
-    //pdf.SetFont("Arial", "B", 16)
     for _, f := range files {
 
         if reader, err := os.Open(filepath.Join(dir_to_scan, f.Name())); err == nil {
             defer reader.Close()
-            im, _, err := image.DecodeConfig(reader)
+            pdf.AddPage()
+            img, _, err := image.Decode(reader)
             if err != nil {
-                fmt.Fprintf(os.Stderr, "%s: %v\n", f.Name(), err)
-                continue
+                log.Fatalln(err)
             }
-             pdf.AddPage()
-             // ImageOptions(src, x, y, width, height, flow, options, link, linkStr)
-             pdf.ImageOptions(
-             path.Join(dir_to_scan,f.Name()),
-             0, 0,
-             float64(im.Width), float64(im.Height),
-             false,
-             gofpdf.ImageOptions{ImageType: "JPG", ReadDpi: true},
-             0,
-             "",
-               )
-            fmt.Printf("%s %d %d\n", f.Name(), im.Width, im.Height)
+            new_image := resize.Resize(1024, 473, img, resize.Lanczos3)
+            err = jpeg.Encode(buf, new_image, nil)
 
+            imgH1, err := gopdf.ImageHolderByBytes(buf.Bytes())
+            if err != nil {
+                  log.Print(err.Error())
+                  return
+            }
+
+            pdf.ImageByHolder(imgH1, 10, 10, nil)
+
+            //clear buffer
+            buf.Reset()
 
           } else {
               fmt.Println("Impossible to open the file:", err)
@@ -80,10 +76,10 @@ func PdfJpegGenerate(filename string, dir_to_scan string) error {
         fmt.Println(f)
     }
 
-    return pdf.OutputFileAndClose(filename)
+     pdf.WritePdf(filename) //pdf.OutputFileAndClose(filename)
 }
 
-
+/*
 // GeneratePdf generates our pdf by adding text and images to the page
 // then saving it to a file (name specified in params).
 func GeneratePdf(filename string) error {
@@ -108,3 +104,4 @@ func GeneratePdf(filename string) error {
 
     return pdf.OutputFileAndClose(filename)
 }
+*/
