@@ -55,7 +55,7 @@ func PdfJpegGenerate(filename string, dir_to_scan string) {
             if err != nil {
                 log.Fatalln(err)
             }
-            new_image := resize.Resize(1024, 473, img, resize.Lanczos3)
+            new_image := resize.Resize(1024, 1365, img, resize.Lanczos3)
             err = jpeg.Encode(buf, new_image, nil)
 
             imgH1, err := gopdf.ImageHolderByBytes(buf.Bytes())
