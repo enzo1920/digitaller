@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-     version := "0.0.2"
+     version := "0.0.3"
      fmt.Println("Pdf jpeg creator version:"+version)
      fmt.Println("start dir is:   img")
      fmt.Println("Press any key to start!!!")
@@ -45,18 +45,42 @@ func PdfJpegGenerate(filename string, dir_to_scan string) {
         pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4 })  
         //buffer for resize jpeg
         buf := new(bytes.Buffer)
+        //path_to_jpg
+        fullpath_jpg := ""
+        //jpg dimention  info
+        width,height :=0,0
 
     for _, f := range files {
-
-        if reader, err := os.Open(filepath.Join(dir_to_scan, f.Name())); err == nil {
+        fullpath_jpg = filepath.Join(dir_to_scan, f.Name())
+        if reader, err := os.Open(fullpath_jpg); err == nil {
             defer reader.Close()
             pdf.AddPage()
             img, _, err := image.Decode(reader)
             if err != nil {
-                log.Fatalln(err)
+                      log.Fatal(err)
             }
-            new_image := resize.Resize(1024, 1365, img, resize.Lanczos3)
-            err = jpeg.Encode(buf, new_image, nil)
+            //получаем длину и ширину фотки, чтобы вписать в пдф
+            width,height = getImageDimension(fullpath_jpg) 
+            if err != nil {
+                log.Fatal(err)
+            }
+
+            // теперь правильно делаем ресайз
+            if height > width {
+                   new_image := resize.Resize(1024, 1365, img, resize.Lanczos3)
+                   err = jpeg.Encode(buf, new_image, nil)
+                   if err != nil {
+                        log.Fatal(err)
+                   }
+
+            }else{
+                   new_image := resize.Resize(1024,768 , img, resize.Lanczos3)
+                   err = jpeg.Encode(buf, new_image, nil)
+                   if err != nil {
+                        log.Fatal(err)
+                   }
+            }
+            //err = jpeg.Encode(buf, new_image, nil)
 
             imgH1, err := gopdf.ImageHolderByBytes(buf.Bytes())
             if err != nil {
@@ -76,32 +100,26 @@ func PdfJpegGenerate(filename string, dir_to_scan string) {
         fmt.Println(f)
     }
 
-     pdf.WritePdf(filename) //pdf.OutputFileAndClose(filename)
+     pdf.WritePdf(filename)
 }
 
-/*
-// GeneratePdf generates our pdf by adding text and images to the page
-// then saving it to a file (name specified in params).
-func GeneratePdf(filename string) error {
 
-    pdf := gofpdf.New("P", "mm", "A4", "")
-    pdf.AddPage()
-    pdf.SetFont("Arial", "B", 16)
-
-    // CellFormat(width, height, text, border, position after, align, fill, link, linkStr)
-    pdf.CellFormat(190, 7, "Welcome to golangcode.com", "0", 0, "CM", false, 0, "")
-
-    // ImageOptions(src, x, y, width, height, flow, options, link, linkStr)
-    pdf.ImageOptions(
-        "avatar.jpg",
-        80, 20,
-        0, 0,
-        false,
-        gofpdf.ImageOptions{ImageType: "JPG", ReadDpi: true},
-        0,
-        "",
-    )
-
-    return pdf.OutputFileAndClose(filename)
+func getImageDimension(filepath string)   (int, int) {
+    w,h :=0,0
+    if file, err := os.Open(filepath); err == nil {
+        defer file.Close()
+        img, _, err := image.DecodeConfig(file)
+        if err != nil {
+                log.Fatal(err)
+        }
+                //fmt.Println("Width:", img.Width, "Height:", img.Height)
+                w = img.Width
+                h = img.Height
+        }else {
+              fmt.Println("Impossible to open the file:", err)
+        }
+    return w, h
 }
-*/
+
+
+
