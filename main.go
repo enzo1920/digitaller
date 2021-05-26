@@ -5,7 +5,6 @@ import (
     "log"
     "os"
     "time"
-    "path"
     "path/filepath"
     "io/ioutil"
     "bytes"
@@ -33,7 +32,13 @@ func main() {
      version := "0.0.4"
      fmt.Println("Pdf jpeg creator version:"+version)
 //************************* read config ******************************************//
-     cfg := Config_reader("./digit.conf")
+     dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+     if err != nil {
+            log.Fatal(err)
+     }
+
+     fmt.Println(dir)
+     cfg := Config_reader(filepath.Join(dir,"digit.conf"))
 
      fmt.Println("Monitoring directory is:", cfg.Monitoring_dir)
      fmt.Println("Press any key to start!!!")
@@ -45,7 +50,7 @@ func main() {
    if _, err := os.Stat(log_dir); os.IsNotExist(err) {
 		os.Mkdir(log_dir, 0644)
    }
-   file, err := os.OpenFile(path.Join(log_dir,cfg.Log_file_name), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+   file, err := os.OpenFile(filepath.Join(log_dir,cfg.Log_file_name), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
    if err != nil {
 		log.Fatal(err)
    }
@@ -64,18 +69,20 @@ func main() {
      //for pdf file names
      counter := 0
      for {
+          time.Sleep(15 * time.Second)
           //проверяем есть ли файлы в директории
           files , err := ioutil.ReadDir(cfg.Monitoring_dir)
-          fmt.Println("files:", files)
+          //fmt.Println("files:", files)
           if err != nil || len(files)== 0 {
-                 log.Println(err)
+                 //log.Println(err)
                  counter = counter
                  continue
           }else{
+               fmt.Println("files:", files)
                PdfJpegGenerate(strconv.Itoa(counter)+".pdf", cfg.Monitoring_dir)
                counter++
          }
-          time.Sleep(15 * time.Second)
+          //time.Sleep(15 * time.Second)
      }
 
 
@@ -148,6 +155,7 @@ func PdfJpegGenerate(filename string, dir_to_scan string) {
             //clear buffer
             buf.Reset()
             //удаляем файл
+            fmt.Println("remove:", fullpath_jpg)
             os.Remove(fullpath_jpg)
             if err != nil {
                    log.Fatal(err)
