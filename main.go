@@ -154,9 +154,10 @@ func PdfJpegGenerate(filename string, dir_to_scan string) {
 
             //clear buffer
             buf.Reset()
+            reader.Close()
             //удаляем файл
             fmt.Println("remove:", fullpath_jpg)
-            os.Remove(fullpath_jpg)
+            os.RemoveAll(fullpath_jpg)
             if err != nil {
                    log.Fatal(err)
             }
