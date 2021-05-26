@@ -4,10 +4,12 @@ import (
     "fmt"
     "log"
     "os"
+    "time"
     "path"
     "path/filepath"
     "io/ioutil"
     "bytes"
+    "strconv"
     "github.com/signintech/gopdf"
     "github.com/nfnt/resize"
     "image"
@@ -30,9 +32,6 @@ type Configuration struct {
 func main() {
      version := "0.0.4"
      fmt.Println("Pdf jpeg creator version:"+version)
-     fmt.Println("start dir is:   img")
-     fmt.Println("Press any key to start!!!")
-     fmt.Scanln()
 //************************* read config ******************************************//
      cfg := Config_reader("./digit.conf")
 
@@ -57,17 +56,36 @@ func main() {
 
 
 
-     start_dir :="./img"
-     folders, err := ioutil.ReadDir(start_dir)
-     if err != nil {
-        log.Fatal(err)
+     //start_dir :="./img"
+     //folders, err := ioutil.ReadDir(start_dir)
+     //if err != nil {
+     //    log.Fatal(err)
+     //}
+     //for pdf file names
+     counter := 0
+     for {
+          //проверяем есть ли файлы в директории
+          files , err := ioutil.ReadDir(cfg.Monitoring_dir)
+          fmt.Println("files:", files)
+          if err != nil || len(files)== 0 {
+                 log.Println(err)
+                 counter = counter
+                 continue
+          }else{
+               PdfJpegGenerate(strconv.Itoa(counter)+".pdf", cfg.Monitoring_dir)
+               counter++
+         }
+          time.Sleep(15 * time.Second)
      }
+
+
+/*
      for _, f := range folders {
             log.Println(start_dir+"/"+f.Name())
             PdfJpegGenerate(f.Name()+".pdf", path.Join(start_dir,f.Name()))
 
      }
-
+*/
 
 }
 
@@ -129,6 +147,11 @@ func PdfJpegGenerate(filename string, dir_to_scan string) {
 
             //clear buffer
             buf.Reset()
+            //удаляем файл
+            os.Remove(fullpath_jpg)
+            if err != nil {
+                   log.Fatal(err)
+            }
 
           } else {
               log.Println("Impossible to open the file:", err)
