@@ -12,21 +12,58 @@ import (
     "github.com/nfnt/resize"
     "image"
     "image/jpeg"
+    "encoding/json"
 )
 
+//структура конфига 
+type Configuration struct {
+	Monitoring_dir string `json:"monitoring_dir"`
+	Log_file_name string  `json:"log_file_name"`
+}
+
+
+
+
+
+
+
 func main() {
-     version := "0.0.3"
+     version := "0.0.4"
      fmt.Println("Pdf jpeg creator version:"+version)
      fmt.Println("start dir is:   img")
      fmt.Println("Press any key to start!!!")
      fmt.Scanln()
+//************************* read config ******************************************//
+     cfg := Config_reader("./digit.conf")
+
+     fmt.Println("Monitoring directory is:", cfg.Monitoring_dir)
+     fmt.Println("Press any key to start!!!")
+     fmt.Scanln()
+
+//*********************** parse config **********************************//
+   //logging
+   log_dir := "./log"
+   if _, err := os.Stat(log_dir); os.IsNotExist(err) {
+		os.Mkdir(log_dir, 0644)
+   }
+   file, err := os.OpenFile(path.Join(log_dir,cfg.Log_file_name), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+   if err != nil {
+		log.Fatal(err)
+   }
+   defer file.Close()
+   log.SetOutput(file)
+   log.Println("Logging to a file digitaller!")
+
+
+
+
      start_dir :="./img"
      folders, err := ioutil.ReadDir(start_dir)
      if err != nil {
         log.Fatal(err)
      }
      for _, f := range folders {
-            fmt.Println(start_dir+"/"+f.Name())
+            log.Println(start_dir+"/"+f.Name())
             PdfJpegGenerate(f.Name()+".pdf", path.Join(start_dir,f.Name()))
 
      }
@@ -84,7 +121,7 @@ func PdfJpegGenerate(filename string, dir_to_scan string) {
 
             imgH1, err := gopdf.ImageHolderByBytes(buf.Bytes())
             if err != nil {
-                  log.Print(err.Error())
+                  log.Println(err.Error())
                   return
             }
 
@@ -94,10 +131,10 @@ func PdfJpegGenerate(filename string, dir_to_scan string) {
             buf.Reset()
 
           } else {
-              fmt.Println("Impossible to open the file:", err)
+              log.Println("Impossible to open the file:", err)
             }
 
-        fmt.Println(f)
+        log.Println(f)
     }
 
      pdf.WritePdf(filename)
@@ -122,4 +159,23 @@ func getImageDimension(filepath string)   (int, int) {
 }
 
 
+//func config_reader(cfg_file string)([]string){
+func Config_reader(cfg_file string) Configuration {
+
+	//c := flag.String("c", cfg_file, "Specify the configuration file.")
+	//flag.Parse()
+	file, err := os.Open(cfg_file)
+	if err != nil {
+		fmt.Println("can't open config file: ", err)
+	}
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	Config := Configuration{}
+	err = decoder.Decode(&Config)
+	if err != nil {
+		fmt.Println("can't decode config JSON: ", err)
+	}
+
+	return Config
+}
 
